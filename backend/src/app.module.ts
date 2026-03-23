@@ -1,0 +1,13 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
+const envModule = ConfigModule.forRoot({
+  isGlobal: true,
+})
+
+@Module({
+  imports: [envModule],
+  controllers: [],
+  providers: [],
+})
+export class AppModule {}
