@@ -1,0 +1,18 @@
+_format_version: "3.0"
+services:
+  - name: safecampus-backend
+    url: http://backend:3001
+    routes:
+      - name: backend-route
+        paths:
+          - /api
+        strip_path: true
+
+  - name: safecampus-keycloak
+    url: http://keycloak:8080
+    routes:
+      - name: keycloak-route
+        paths:
+          - /auth
+        strip_path: false
+        preserve_host: true

@@ -1,0 +1,137 @@
+{
+  "realm": "safecampus",
+  "enabled": true,
+  "sslRequired": "none",
+  "internationalizationEnabled": true,
+  "loginTheme": "keycloak",
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "rsa",
+        "providerId": "rsa",
+        "config": {
+          "priority": ["100"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "algorithm": ["RS256"],
+          "privateKey": ["MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDaV1Ftnh6RIpfIhFiI3R5g28AmAlV1biPqMrODtchn4rcoND6hotvTMNwBVs8dxdqvVrx29d8MEVbIsVovf1eTY+nXeYDh61UBFe7cojGX8fiwg4gj2SQDcplG8BUV5JCdeH0fXv83ajHfxO1IFK+4PBaIGBzKZ+dP8ItJNrIGp4lEDB+NtUGtUC+4q6pFB+cKw8k7EIzGARuP9G/Pdb8ZFII2W7muaY89YwkNFp97ct9kvbbDs7fnXHqMkTEtniGyqxoJhjk9zM/Wzaix03nInnuUV8Vov8nMXLE4crM/axLn5MRC1n1C8hVcJzt52LKVGUusSKHzq4qE8Bl8/wsrAgMBAAECggEANURNMM19DpJebkRfZxBu61lhMMSr/aifqXCyG+Va3YFRhsTsLLnTIFxQqCD6CXzuA43JD8qfHk4SmoauBl1uS555+6AAYd1sUQX9TqVhLP0S21lTes9sOk0YeNZ0hnFLGKe++srNv8KwJTPhYY7uaad7JbugNn8PzxBTospttzJvv1p95ti2jpq6+Ga6061/yICJGG+WJFJNjhTkd0MU4aOUO3JyMEiOeXzo7WE2YgKnrbmqQ1fsBF3qaiDI61I6dWUCBbWE9QfbFz2LnBKPQz9ZO0QsxuWy1XL0mET8wLT7fSE9uxonOZ0rO9YMhLjGMTMaCAJv8Xbe9dI1nQge6QKBgQDfbtU/bCXk6MTBJEcOnQOvF9b1MHopop8dQhh/Z7MUwQPbo5FJO+WRnOrr5OWy2DA/6de8WBBh6g8DC6o93arPJgTCQKmwjKkA92drEf54jn+C9YTkvXgYxpcDijaKFY+6jb7jOTLn3Bbya/jSYQitlM0JLY9/gmO1kj6nHy+F6QKBgQD6KnzhuhFadP6wiXZBzyjOM24s+k0DZhyT1Fcz8ogJdv/6DIoYRrpq78rEQ7RkAgot650maXUe9AqAjq1Gtu0W6Z8Czt13zIvrxZpH0FQEyu1iRT+1B058FAB0u2lBwQquFX60gxy2oyxNHtWUvW4icl3/LkxBzXhGnl+zdyMX8wKBgADfbfXRdlRulFYszhpAgsMsVKqghdmjyPtURsQ4o3pxRpKVEPw4P61R75j8S+lm7slRIIab0XSQdX6NjRywwPoOK/aWShNmeUKHtN+2MkhGRjk8vEgodU+jdvOMlqnza5xO8W/xyUEemvhXc6Fev6nt6t8eTnExETKkX5pHhOgBAoGAcZtN7yySqOOsrfsfCy/KtinBBQf+ZWa/35p0p5CimrnB8Yo0RGYKTnnrOUoN58TNXqE7UrBdkdr90ff5VL3J2bfqkFnlVXw8pqusLqS7IxoMx63vCoTw7YQf2OMrH8NM2FXGnq9UINTlT3iLQers0xPg//vEgbWPw3I0v8mA1GUCgYEApaVB6IBrqHWuMmFeMOGpa/hj3ikUDT+EJ2RofPeJwrjoxvWDf1qVDrPO5cuoCJSTzJqQWiSj/KAAmGM0tUV5m3QdinwiF5tHbgi2vcOcfZYG+iJedtmlwWj9vJfNRrKLMNQrEtXJ8p5lf43BKCceOSBwIY6+LkxykI1uCIsXd18="],
+          "publicKey": ["MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2ldRbZ4ekSKXyIRYiN0eYNvAJgJVdW4j6jKzg7XIZ+K3KDQ+oaLb0zDcAVbPHcXar1a8dvXfDBFWyLFaL39Xk2Pp13mA4etVARXu3KIxl/H4sIOII9kkA3KZRvAVFeSQnXh9H17/N2ox38TtSBSvuDwWiBgcymfnT/CLSTayBqeJRAwfjbVBrVAvuKuqRQfnCsPJOxCMxgEbj/Rvz3W/GRSCNlu5rmmPPWMJDRafe3LfZL22w7O351x6jJExLZ4hsqsaCYY5PczP1s2osdN5yJ57lFfFaL/JzFyxOHKzP2sS5+TEQtZ9QvIVXCc7ediylRlLrEih86uKhPAZfP8LKwIDAQAB"]
+        }
+      }
+    ]
+  },
+  "roles": {
+    "realm": [
+      { "name": "STUDENT", "description": "Student role" },
+      { "name": "ADMIN", "description": "Administrator role" },
+      { "name": "OPERATOR", "description": "Operator role" },
+      { "name": "MAINTENANCE", "description": "Maintenance role" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "safecampus-frontend",
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://127.0.0.1:3000/*",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000/*",
+        "http://localhost:3000"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "safecampus-backend",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "bearerOnly": true,
+      "clientAuthenticatorType": "client-secret",
+      "attributes": {
+        "oauth2.token.exchange.enabled": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "student",
+      "email": "student@safecampus.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "John",
+      "lastName": "Student",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "student123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["STUDENT"]
+    },
+    {
+      "username": "admin",
+      "email": "admin@safecampus.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "operator",
+      "email": "operator@safecampus.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "Operator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operator123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["OPERATOR"]
+    },
+    {
+      "username": "maintenance",
+      "email": "maintenance@safecampus.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Charlie",
+      "lastName": "Maintenance",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "maintenance123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["MAINTENANCE"]
+    }
+  ]
+}

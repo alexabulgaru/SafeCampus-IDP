@@ -12,3 +12,64 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  STUDENT
+  OPERATOR
+  ADMIN
+  MAINTENANCE
+}
+
+enum IncidentType {
+  SAFETY
+  MAINTENANCE
+  MEDICAL
+  USUAL
+}
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+model User {
+  id           String @id @default(uuid())
+  keycloakId   String @unique
+  firstName    String
+  lastName     String
+  email        String @unique
+  role         Role @default(STUDENT)
+  lat          String?
+  lng          String?
+  incidents    Incidents[] @relation("UserIncidents")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Incidents {
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  isResolved   Boolean  @default(false)
+  type         IncidentType
+  reportedBy   User     @relation("UserIncidents", fields: [reportedById], references: [id])
+  reportedById String
+  lat          String?
+  lng          String?
+  status       Status   @default(PENDING)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  message      String
+  incidentId   String
+  isRead       Boolean  @default(false)
+  sentViaKafka Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

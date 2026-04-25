@@ -1,0 +1,158 @@
+version: "3.8"
+
+networks:
+  public_net:
+    driver: overlay
+  db_net:
+    driver: overlay
+    internal: true
+  cache_net:
+    driver: overlay
+    internal: true
+  message_queue_net:
+    driver: overlay
+    internal: true
+  auth_net:
+    driver: overlay
+    internal: true
+
+volumes:
+  db_data:
+  db_replica_data:
+  keycloak_data:
+  redis_data:
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "Password2024!"
+      MYSQL_DATABASE: "safecampus"
+    command: --server-id=1 --log-bin=mysql-bin --binlog-format=ROW
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - db_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  db_replica:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "Password2024!"
+      MYSQL_DATABASE: "safecampus"
+    command: --server-id=2 --relay-log=relay-log --relay-log-index=relay-log.index
+    volumes:
+      - db_replica_data:/var/lib/mysql
+    networks:
+      - db_net
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "admin"
+      KC_HOSTNAME_URL: "http://localhost:8000/auth"
+      KC_HOSTNAME_ADMIN_URL: "http://localhost:8000/auth"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_PROXY: "edge"
+      KC_HTTP_RELATIVE_PATH: "/auth"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ${PWD}/keycloak/safecampus-realm.json:/opt/keycloak/data/import/safecampus-realm.json:ro
+    expose:
+      - "8080"
+    networks:
+      - public_net
+      - auth_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  kong:
+    image: kong:3.6-ubuntu
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/declarative/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ${PWD}/kong/kong.yml:/usr/local/kong/declarative/kong.yml:ro
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: host
+      - target: 8001
+        published: 8001
+        protocol: tcp
+        mode: host
+    networks:
+      - public_net
+    depends_on:
+      - backend
+      - keycloak
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+  
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - cache_net
+      - db_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  backend:
+    image: safecampus_backend:latest
+    environment:
+      PORT: "3001"
+      DATABASE_URL: "mysql://root:Password2024!@db:3306/safecampus"
+      REDIS_URL: "redis://redis:6379"
+      KEYCLOAK_AUTH_URL: "http://localhost:8000/auth"
+      KEYCLOAK_REALM: "safecampus"
+      KEYCLOAK_CLIENT_ID: "safecampus-backend"
+      KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2ldRbZ4ekSKXyIRYiN0eYNvAJgJVdW4j6jKzg7XIZ+K3KDQ+oaLb0zDcAVbPHcXar1a8dvXfDBFWyLFaL39Xk2Pp13mA4etVARXu3KIxl/H4sIOII9kkA3KZRvAVFeSQnXh9H17/N2ox38TtSBSvuDwWiBgcymfnT/CLSTayBqeJRAwfjbVBrVAvuKuqRQfnCsPJOxCMxgEbj/Rvz3W/GRSCNlu5rmmPPWMJDRafe3LfZL22w7O351x6jJExLZ4hsqsaCYY5PczP1s2osdN5yJ57lFfFaL/JzFyxOHKzP2sS5+TEQtZ9QvIVXCc7ediylRlLrEih86uKhPAZfP8LKwIDAQAB"
+    volumes:
+      - ${PWD}/backend/src:/app/src:ro
+      - ${PWD}/backend/prisma:/app/prisma:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "3001"
+    networks:
+      - public_net
+      - db_net
+      - cache_net
+      - message_queue_net
+      - auth_net
+    depends_on:
+      - db
+      - keycloak
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
