@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { KafkaService } from 'src/kafka/kafka.service';
+import { KafkaService } from '../kafka/kafka.service';
 import { Role, IncidentType, Incidents, User } from '@prisma/client';
 
 @Injectable()
@@ -48,7 +48,7 @@ export class NotificationService implements OnModuleInit {
         return false;
     }
 
-    private async handleNewIncident(incident: Incidents): Promise<void> {
+    public async handleNewIncident(incident: Incidents): Promise<void> {
         try {
             const incidentLatNum = parseFloat(incident.lat);
             const incidentLngNum = parseFloat(incident.lng);

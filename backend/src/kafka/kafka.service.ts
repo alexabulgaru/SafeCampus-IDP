@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Kafka, Producer, Consumer } from 'kafkajs';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class KafkaService {
@@ -8,7 +9,7 @@ export class KafkaService {
     private consumer: Consumer;
     private isConnected = false;
 
-    constructor() {
+    constructor(private metricsService: MetricsService) {
         this.kafka = new Kafka({
             clientId: `${process.env.KAFKA_CLIENT_ID || ''}`,
             brokers: (process.env.KAFKA_BROKERS || '').split(','),
@@ -52,6 +53,9 @@ export class KafkaService {
                     },
                 ],
             });
+
+            this.metricsService.recordKafkaMessagePublished(topic, 'success');
+
         } catch (error) {
             throw error;
         }

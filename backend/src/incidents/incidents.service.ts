@@ -5,7 +5,8 @@ import { CreateIncidentDto } from "./dtos/create-incident.dto";
 import { Role, IncidentType, Incidents, User } from "@prisma/client";
 import { UpdateStatusDto } from "./dtos/update-status.dto";
 import { KeycloakUser } from "../common/interfaces/interfaces";
-import { KafkaService } from "src/kafka/kafka.service";
+import { KafkaService } from "../kafka/kafka.service";
+import { MetricsService } from "../metrics/metrics.service"
 
 @Injectable()
 export class IncidentsService {
@@ -13,6 +14,7 @@ export class IncidentsService {
         private readonly prisma: PrismaService,
         private readonly cache: CacheService,
         private readonly kafka: KafkaService,
+        private readonly metricsService: MetricsService,
     ) { }
 
     async createIncident(createIncidentDto: CreateIncidentDto): Promise<void> {
@@ -32,6 +34,8 @@ export class IncidentsService {
             await this.kafka.publishAlert('incident-created', incident);
 
             await this.cache.invalidatePattern('incidents:*');
+
+            this.metricsService.recordIncidentCreated(incident.type, 'NEW');
         } catch (e) {
             console.log('Error creating incident:', e);
             throw e;

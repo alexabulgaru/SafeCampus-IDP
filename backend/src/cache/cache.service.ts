@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { createClient } from 'redis';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class CacheService {
     private client: ReturnType<typeof createClient>;
     private isConnected = false;
 
-    constructor() {
+    constructor(private metricsService: MetricsService) {
         this.client = createClient({
             url: process.env.REDIS_URL || 'redis://localhost:6379',
         });
@@ -53,8 +54,10 @@ export class CacheService {
         try {
             const data = await this.client.get(key);
             if (data) {
+                this.metricsService.recordCacheHit(key);
                 return JSON.parse(typeof data === 'string' ? data : data.toString());
             } else {
+                this.metricsService.recordCacheMiss(key);
                 return null;
             }
         } catch (error) {
