@@ -6,6 +6,10 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { KeycloakSyncInterceptor } from './common/interceptors/keycloak-sync.interceptor';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { CacheModule } from './cache/cache.module';
+import { KafkaModule } from './kafka/kafka.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { IncidentsModule } from './incidents/incidents.module';
 
 const envModule = ConfigModule.forRoot({
   isGlobal: true,
@@ -26,6 +30,10 @@ const envModule = ConfigModule.forRoot({
     PrismaModule,
     UserModule,
     AuthModule,
+    CacheModule,
+    KafkaModule,
+    NotificationsModule,
+    IncidentsModule,
   ],
   controllers: [],
   providers: [
