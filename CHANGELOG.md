@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Unit Testing Suite (Alexandru):** Established a comprehensive unit testing framework for the backend microservices to ensure system reliability. *(This represents Alexandru's primary code contribution, alongside his extensive research and architectural planning for the data access, Kafka, and alert systems).*
+- **Monitoring Infrastructure (Alexandru):** Integrated Prometheus and Grafana into the Docker stack for real-time metrics collection and visualization. Organized configuration files and mounted provisioning volumes in `stack.yml`.
 - **Event-Driven Architecture (Alexandra):** Integrated Kafka message broker to handle asynchronous background tasks and alert generation. *(Code implementation by Alexandra; system research and architectural design by Alexandru).*
 - **Read Replica Infrastructure (Alexandra):** Configured a native dual-Prisma setup (`PrismaService` for writes, `PrismaReplicaService` for reads) to route heavy report queries to the MySQL read replica, protecting the master database. *(Code implementation by Alexandra; database replication research by Alexandru).*
 - **Adminer Integration (Alexandra):** Added Adminer to the Docker stack on an isolated database network for secure, direct GUI access to the MySQL clusters.

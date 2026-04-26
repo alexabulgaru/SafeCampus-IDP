@@ -15,6 +15,9 @@ networks:
   auth_net:
     driver: overlay
     internal: true
+  monitoring_net:
+    driver: overlay
+    internal: true
 
 volumes:
   db_data:
@@ -23,6 +26,8 @@ volumes:
   redis_data:
   kafka_data:
   zookeeper_data:
+  prometheus_data:
+  grafana_data:
 
 services:
   db:
@@ -63,18 +68,17 @@ services:
     environment:
       KEYCLOAK_ADMIN: "admin"
       KEYCLOAK_ADMIN_PASSWORD: "admin"
-      KC_HOSTNAME_URL: "http://localhost:8000/auth"
-      KC_HOSTNAME_ADMIN_URL: "http://localhost:8000/auth"
+      KC_HOSTNAME_URL: "http://localhost:8080"
       KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_PROXY_HEADERS: "xforwarded"
       KC_PROXY: "edge"
-      KC_HTTP_RELATIVE_PATH: "/auth"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ${PWD}/keycloak/safecampus-realm.json:/opt/keycloak/data/import/safecampus-realm.json:ro
-    expose:
-      - "8080"
+      - ./keycloak/safecampus-realm.json:/opt/keycloak/data/import/safecampus-realm.json:ro
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
     networks:
       - public_net
       - auth_net
@@ -83,37 +87,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  kong:
-    image: kong:3.6-ubuntu
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/declarative/kong.yml"
-      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
-      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
-      KONG_PROXY_ERROR_LOG: "/dev/stderr"
-      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-    volumes:
-      - ${PWD}/kong/kong.yml:/usr/local/kong/declarative/kong.yml:ro
-    ports:
-      - target: 8000
-        published: 8000
-        protocol: tcp
-        mode: host
-      - target: 8001
-        published: 8001
-        protocol: tcp
-        mode: host
-    networks:
-      - public_net
-    depends_on:
-      - backend
-      - keycloak
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-  
   redis:
     image: redis:7-alpine
     volumes:
@@ -162,37 +135,77 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-  
-  adminer:
-    image: adminer
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
     ports:
-      - "8081:8080"
+      - target: 9090
+        published: 9090
+        protocol: tcp
+        mode: host
     networks:
-      - db_net
+      - public_net
+      - monitoring_net
     deploy:
       replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/safecampus.json:ro
+      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+    ports:
+      - target: 3000
+        published: 3010
+        protocol: tcp
+        mode: host
+    networks:
+      - public_net
+      - monitoring_net
+    depends_on:
+      - prometheus
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   backend:
     image: safecampus_backend:latest
     environment:
       PORT: "3001"
       DATABASE_URL: "mysql://root:Password2024!@db:3306/safecampus"
-      DATABASE_URL_REPLICA: "mysql://root:Password2024!@db_replica:3306/safecampus"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_CLIENT_ID: "safecampus-backend"
       KAFKA_GROUP_ID: "safecampus-alertss"
-      KEYCLOAK_AUTH_URL: "http://localhost:8000/auth"
+      KEYCLOAK_AUTH_URL: "http://localhost:8080"
       KEYCLOAK_REALM: "safecampus"
       KEYCLOAK_CLIENT_ID: "safecampus-backend"
+      KEYCLOAK_BEARER_ONLY: "true"
       KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2ldRbZ4ekSKXyIRYiN0eYNvAJgJVdW4j6jKzg7XIZ+K3KDQ+oaLb0zDcAVbPHcXar1a8dvXfDBFWyLFaL39Xk2Pp13mA4etVARXu3KIxl/H4sIOII9kkA3KZRvAVFeSQnXh9H17/N2ox38TtSBSvuDwWiBgcymfnT/CLSTayBqeJRAwfjbVBrVAvuKuqRQfnCsPJOxCMxgEbj/Rvz3W/GRSCNlu5rmmPPWMJDRafe3LfZL22w7O351x6jJExLZ4hsqsaCYY5PczP1s2osdN5yJ57lFfFaL/JzFyxOHKzP2sS5+TEQtZ9QvIVXCc7ediylRlLrEih86uKhPAZfP8LKwIDAQAB"
     volumes:
-      - ${PWD}/backend/src:/app/src:ro
-      - ${PWD}/backend/prisma:/app/prisma:ro
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    expose:
-      - "3001"
+    ports:
+      - target: 3001
+        published: 3001
+        protocol: tcp
     networks:
       - public_net
       - db_net
@@ -202,9 +215,40 @@ services:
     depends_on:
       - db
       - keycloak
+      - kafka
     deploy:
       replicas: 2
       restart_policy:
         condition: on-failure
         delay: 10s
         max_attempts: 5
+
+  frontend:
+    image: safecampus_frontend:latest
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_KEYCLOAK_URL: "http://localhost:8080"
+      NEXT_PUBLIC_KEYCLOAK_REALM: "safecampus"
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "safecampus-frontend"
+      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3001"
+    volumes:
+      - ./frontend/app:/app/app:ro
+      - ./frontend/lib:/app/lib:ro
+      - ./frontend/types:/app/types:ro
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:ro
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+    networks:
+      - public_net
+    depends_on:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure

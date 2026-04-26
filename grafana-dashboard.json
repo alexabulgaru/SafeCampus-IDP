@@ -1,0 +1,201 @@
+{
+    "id": null,
+    "title": "SafeCampus System Monitoring",
+    "uid": "safecampus-monitoring",
+    "timezone": "browser",
+    "panels": [
+        {
+            "id": 1,
+            "title": "HTTP Request Rate (req/sec)",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "rate(http_requests_total[1m])",
+                    "legendFormat": "{{method}} {{route}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 2,
+            "title": "Request Latency (p95)",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+                    "legendFormat": "{{method}} {{route}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        { 
+            "id": 3,
+            "title": "Error Rate",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 8
+            },
+            "targets": [
+                {
+                    "expr": "rate(http_requests_total{status_code=~\"5..\"}[5m])",
+                    "legendFormat": "{{route}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 4,
+            "title": "Incidents Created (Total)",
+            "type": "graph",
+                "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            },
+            "targets": [
+            {
+                "expr": "increase(incidents_created_total[1h])",
+                "legendFormat": "{{type}} - {{status}}"
+            }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 5,
+            "title": "Notifications Created",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+            },
+            "targets": [
+                {
+                    "expr": "increase(notifications_created_total[1h])",
+                    "legendFormat": "{{role}} - {{type}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 6,
+            "title": "Kafka Messages Published",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 16
+            },
+            "targets": [
+                {
+                    "expr": "rate(kafka_messages_published_total[5m])",
+                    "legendFormat": "{{topic}} - {{status}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 7,
+            "title": "Kafka Errors",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 24
+            },
+            "targets": [
+                {
+                    "expr": "increase(kafka_errors_total[1h])",
+                    "legendFormat": "{{topic}} - {{error_type}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 8,
+            "title": "Cache Hit Ratio",
+            "type": "graph",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 24
+            },
+            "targets": [
+                {
+                    "expr": "cache_hits_total / (cache_hits_total + cache_misses_total)",
+                    "legendFormat": "{{key_pattern}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 9,
+            "title": "HTTP Status Codes Distribution",
+            "type": "piechart",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 32
+            },
+            "targets": [
+                {
+                    "expr": "http_requests_total",
+                    "legendFormat": "{{status_code}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        },
+        {
+            "id": 10,
+            "title": "Incident Types Distribution",
+            "type": "piechart",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 32
+            },
+            "targets": [
+                {
+                    "expr": "incidents_created_total",
+                    "legendFormat": "{{type}}"
+                }
+            ],
+            "datasource": "Prometheus"
+        }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 37,
+    "style": "dark",
+    "tags": ["safecampus", "monitoring"],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "version": 0
+}
