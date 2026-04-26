@@ -1,18 +1,18 @@
 import { Injectable, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CacheService } from "../cache/cache.service";
-import { NotificationService } from "src/notifications/notifications.service";
 import { CreateIncidentDto } from "./dtos/create-incident.dto";
 import { Role, IncidentType, Incidents, User } from "@prisma/client";
 import { UpdateStatusDto } from "./dtos/update-status.dto";
 import { KeycloakUser } from "../common/interfaces/interfaces";
+import { KafkaService } from "src/kafka/kafka.service";
 
 @Injectable()
 export class IncidentsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly cache: CacheService,
-        private readonly notifications: NotificationService,
+        private readonly kafka: KafkaService,
     ) { }
 
     async createIncident(createIncidentDto: CreateIncidentDto): Promise<void> {
@@ -29,14 +29,7 @@ export class IncidentsService {
                 },
             });
 
-            await this.notifications.createAndPublishAlert(
-                incident.id,
-                `New ${incident.type} incident reported`,
-                `${createIncidentDto.title}: ${createIncidentDto.description}`,
-                incident.type,
-                incident.lat,
-                incident.lng,
-            );
+            await this.kafka.publishAlert('incident-created', incident);
 
             await this.cache.invalidatePattern('incidents:*');
         } catch (e) {
@@ -56,16 +49,24 @@ export class IncidentsService {
                 return cached;
             }
 
-            const dbUser = await this.prisma.user.findUnique({
-                where: { keycloakId },
-            });
+            const userCacheKey = `user-profile:${keycloakId}`;
+
+            let dbUser = await this.cache.get(userCacheKey);
 
             if (!dbUser) {
-                console.log('Database user not found for keycloakId:', keycloakId);
-                return [];
+                dbUser = await this.prisma.user.findUnique({
+                    where: { keycloakId },
+                });
+
+                if (!dbUser) {
+                    console.log('Database user not found for keycloakId:', keycloakId);
+                    return [];
+                }
+
+                await this.cache.set(userCacheKey, dbUser, 3600);
             }
 
-            let incidents: any[] = [];
+            let incidents: (Incidents & { reportedBy: User | null })[] = [];
 
             if (dbUser.role === Role.STUDENT) {
                 incidents = await this.prisma.incidents.findMany({

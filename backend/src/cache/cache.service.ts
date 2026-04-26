@@ -36,7 +36,7 @@ export class CacheService {
         try {
             const serialized = JSON.stringify(value);
             if (ttl) {
-                await this.client.setEx(key, ttl, serialized);
+                await this.client.set(key, serialized, { EX: ttl });
             } else {
                 await this.client.set(key, serialized);
             }
@@ -81,9 +81,21 @@ export class CacheService {
         }
 
         try {
-            const keys = await this.client.keys(pattern);
-            if (keys.length > 0) {
-                await this.client.del(keys);
+            let cursor = '0';
+            let keepScanning = true;
+
+            while (keepScanning) {
+                const res = await this.client.scan(cursor, { MATCH: pattern, COUNT: 100 });
+
+                cursor = res.cursor.toString();
+
+                if (res.keys.length > 0) {
+                    await this.client.del(res.keys);
+                }
+
+                if (cursor === '0') {
+                    keepScanning = false;
+                }
             }
         } catch (error) {
             console.log('Redis pattern invalidation error:', error);

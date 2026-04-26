@@ -4,10 +4,10 @@ import { IncidentsController } from "./incidents.controller";
 import { PrismaModule } from "../prisma/prisma.module";
 import { CacheModule } from "../cache/cache.module";
 import { AuthModule } from "../auth/auth.module";
-import { NotificationsModule } from "src/notifications/notifications.module";
+import { KafkaModule } from "src/kafka/kafka.module";
 
 @Module({
-    imports: [PrismaModule, CacheModule, AuthModule, NotificationsModule],
+    imports: [PrismaModule, CacheModule, AuthModule, KafkaModule],
     providers: [IncidentsService],
     controllers: [IncidentsController],
     exports: [IncidentsService],

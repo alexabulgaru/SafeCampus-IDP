@@ -3,11 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaService) { }
 
 	async getMe(request: any) {
 		const keycloakUser = request?.user;
-		
+
 		if (!keycloakUser) {
 			return null;
 		}

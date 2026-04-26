@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { Role, IncidentType } from '@prisma/client';
+import { Role, IncidentType, Incidents, User } from '@prisma/client';
 
 @Injectable()
 export class NotificationService implements OnModuleInit {
@@ -11,7 +11,7 @@ export class NotificationService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        await this.kafka.subscribe('incident-alerts', this.handleIncidentAlert.bind(this));
+        await this.kafka.subscribe('incident-created', this.handleNewIncident.bind(this));
     }
 
     private calculateDistance(
@@ -48,19 +48,14 @@ export class NotificationService implements OnModuleInit {
         return false;
     }
 
-    async createAndPublishAlert(
-        incidentId: string,
-        title: string,
-        message: string,
-        incidentType: string,
-        incidentLat: string,
-        incidentLng: string,
-    ): Promise<void> {
+    private async handleNewIncident(incident: Incidents): Promise<void> {
         try {
-            const incidentLatNum = parseFloat(incidentLat);
-            const incidentLngNum = parseFloat(incidentLng);
+            const incidentLatNum = parseFloat(incident.lat);
+            const incidentLngNum = parseFloat(incident.lng);
+            const title = `New ${incident.type} incident reported`;
+            const message = `${incident.title}: ${incident.description}`;
 
-            const students = await this.prisma.user.findMany({
+            const students: User[] = await this.prisma.user.findMany({
                 where: {
                     role: Role.STUDENT,
                     lat: { not: null },
@@ -69,30 +64,26 @@ export class NotificationService implements OnModuleInit {
             });
 
             const nearbyStudents = students.filter((student) => {
+                if (!student.lat || !student.lng) return false;
+
                 const studentLat = parseFloat(student.lat);
                 const studentLng = parseFloat(student.lng);
-                const distance = this.calculateDistance(
-                    incidentLatNum,
-                    incidentLngNum,
-                    studentLat,
-                    studentLng,
-                );
+                const distance = this.calculateDistance(incidentLatNum, incidentLngNum, studentLat, studentLng);
+
                 return distance <= 1;
             });
 
-            const staff = await this.prisma.user.findMany({
+            const staff: User[] = await this.prisma.user.findMany({
                 where: {
-                    role: {
-                        in: [Role.OPERATOR, Role.MAINTENANCE, Role.ADMIN],
-                    },
+                    role: { in: [Role.OPERATOR, Role.MAINTENANCE, Role.ADMIN] },
                 },
             });
 
             const relevantStaff = staff.filter((staffMember) =>
-                this.shouldNotifyRole(staffMember.role, incidentType),
+                this.shouldNotifyRole(staffMember.role, incident.type),
             );
 
-            const allRecipients = [...nearbyStudents, ...relevantStaff];
+            const allRecipients: User[] = [...nearbyStudents, ...relevantStaff];
 
             for (const recipient of allRecipients) {
                 const notification = await this.prisma.notification.create({
@@ -100,39 +91,26 @@ export class NotificationService implements OnModuleInit {
                         userId: recipient.id,
                         title,
                         message,
-                        incidentId,
+                        incidentId: incident.id,
                     },
                 });
 
                 await this.kafka.publishAlert('incident-alerts', {
                     notificationId: notification.id,
-                    incidentId,
+                    incidentId: incident.id,
                     userId: recipient.id,
                     title,
                     message,
-                    incidentType,
+                    incidentType: incident.type,
                     recipientRole: recipient.role,
                     timestamp: new Date().toISOString(),
                 });
             }
 
-            console.log(
-                `Alert published for incident ${incidentId} (${incidentType}) to ${nearbyStudents.length} nearby students + ${relevantStaff.length} staff`,
-            );
-        } catch (error) {
-            console.log('Error creating alert:', error);
-            throw error;
-        }
-    }
+            console.log(`[Kafka Consumer] Successfully notified ${nearbyStudents.length} students and ${relevantStaff.length} staff.`);
 
-    private async handleIncidentAlert(message: any): Promise<void> {
-        try {
-            await this.prisma.notification.update({
-                where: { id: message.notificationId },
-                data: { sentViaKafka: true },
-            });
         } catch (error) {
-            console.log('Error handling alert:', error);
+            console.log('[Kafka Consumer] Error handling new incident alert:', error);
         }
     }
 
