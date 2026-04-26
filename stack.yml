@@ -1,7 +1,7 @@
 version: "3.8"
 
 networks:
-  public_net:
+  gateway_net:
     driver: overlay
   db_net:
     driver: overlay
@@ -68,24 +68,65 @@ services:
     environment:
       KEYCLOAK_ADMIN: "admin"
       KEYCLOAK_ADMIN_PASSWORD: "admin"
-      KC_HOSTNAME_URL: "http://localhost:8080"
+      KC_HOSTNAME_URL: "http://localhost:8000/auth"
+      KC_HOSTNAME_ADMIN_URL: "http://localhost:8000/auth"
       KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY_HEADERS: "xforwarded"
       KC_PROXY: "edge"
+      KC_HTTP_RELATIVE_PATH: "/auth"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak/safecampus-realm.json:/opt/keycloak/data/import/safecampus-realm.json:ro
-    ports:
-      - target: 8080
-        published: 8080
-        protocol: tcp
-        mode: host
+      - ${PWD}/keycloak/safecampus-realm.json:/opt/keycloak/data/import/safecampus-realm.json:ro
+    expose:
+      - "8080"
     networks:
-      - public_net
+      - gateway_net
       - auth_net
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+
+  kong:
+    image: kong:3.6-ubuntu
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/declarative/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ${PWD}/kong/kong.yml:/usr/local/kong/declarative/kong.yml:ro
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: host
+      - target: 8001
+        published: 8001
+        protocol: tcp
+        mode: host
+    networks:
+      - gateway_net
+    depends_on:
+      - backend
+      - keycloak
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - db_net
+    deploy:
+      replicas: 1
 
   redis:
     image: redis:7-alpine
@@ -150,7 +191,7 @@ services:
         protocol: tcp
         mode: host
     networks:
-      - public_net
+      - gateway_net
       - monitoring_net
     deploy:
       replicas: 1
@@ -174,7 +215,7 @@ services:
         protocol: tcp
         mode: host
     networks:
-      - public_net
+      - gateway_net
       - monitoring_net
     depends_on:
       - prometheus
@@ -188,30 +229,30 @@ services:
     environment:
       PORT: "3001"
       DATABASE_URL: "mysql://root:Password2024!@db:3306/safecampus"
+      DATABASE_URL_REPLICA: "mysql://root:Password2024!@db_replica:3306/safecampus"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_CLIENT_ID: "safecampus-backend"
       KAFKA_GROUP_ID: "safecampus-alertss"
-      KEYCLOAK_AUTH_URL: "http://localhost:8080"
+      KEYCLOAK_AUTH_URL: "http://localhost:8000/auth"
       KEYCLOAK_REALM: "safecampus"
       KEYCLOAK_CLIENT_ID: "safecampus-backend"
       KEYCLOAK_BEARER_ONLY: "true"
       KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2ldRbZ4ekSKXyIRYiN0eYNvAJgJVdW4j6jKzg7XIZ+K3KDQ+oaLb0zDcAVbPHcXar1a8dvXfDBFWyLFaL39Xk2Pp13mA4etVARXu3KIxl/H4sIOII9kkA3KZRvAVFeSQnXh9H17/N2ox38TtSBSvuDwWiBgcymfnT/CLSTayBqeJRAwfjbVBrVAvuKuqRQfnCsPJOxCMxgEbj/Rvz3W/GRSCNlu5rmmPPWMJDRafe3LfZL22w7O351x6jJExLZ4hsqsaCYY5PczP1s2osdN5yJ57lFfFaL/JzFyxOHKzP2sS5+TEQtZ9QvIVXCc7ediylRlLrEih86uKhPAZfP8LKwIDAQAB"
     volumes:
-      - ./backend/src:/app/src:ro
-      - ./backend/prisma:/app/prisma:ro
+      - ${PWD}/backend/src:/app/src:ro
+      - ${PWD}/backend/prisma:/app/prisma:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    ports:
-      - target: 3001
-        published: 3001
-        protocol: tcp
+    expose:
+      - "3001"
     networks:
-      - public_net
+      - gateway_net
       - db_net
       - cache_net
       - message_queue_net
       - auth_net
+      - monitoring_net
     depends_on:
       - db
       - keycloak
@@ -222,33 +263,3 @@ services:
         condition: on-failure
         delay: 10s
         max_attempts: 5
-
-  frontend:
-    image: safecampus_frontend:latest
-    command: npm run dev
-    environment:
-      NEXT_PUBLIC_KEYCLOAK_URL: "http://localhost:8080"
-      NEXT_PUBLIC_KEYCLOAK_REALM: "safecampus"
-      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "safecampus-frontend"
-      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3001"
-    volumes:
-      - ./frontend/app:/app/app:ro
-      - ./frontend/lib:/app/lib:ro
-      - ./frontend/types:/app/types:ro
-      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:ro
-      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - target: 3000
-        published: 3000
-        protocol: tcp
-        mode: host
-    networks:
-      - public_net
-    depends_on:
-      - backend
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
