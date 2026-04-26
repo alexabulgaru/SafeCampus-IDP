@@ -162,12 +162,22 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
+  
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - db_net
+    deploy:
+      replicas: 1
 
   backend:
     image: safecampus_backend:latest
     environment:
       PORT: "3001"
       DATABASE_URL: "mysql://root:Password2024!@db:3306/safecampus"
+      DATABASE_URL_REPLICA: "mysql://root:Password2024!@db_replica:3306/safecampus"
       REDIS_URL: "redis://redis:6379"
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_CLIENT_ID: "safecampus-backend"
