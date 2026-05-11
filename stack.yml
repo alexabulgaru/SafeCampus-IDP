@@ -34,10 +34,17 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: "Password2024!"
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: "safecampus"
-    command: --server-id=1 --log-bin=mysql-bin --binlog-format=ROW
+      MYSQL_REPLICATION_USER: "replicator"
+      MYSQL_REPLICATION_PASSWORD: "ReplicaSync2024!"
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
     volumes:
       - db_data:/var/lib/mysql
+      - ./mysql/db-init:/docker-entrypoint-initdb.d:ro
     networks:
       - db_net
     deploy:
@@ -49,10 +56,17 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: "Password2024!"
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: "safecampus"
-    command: --server-id=2 --relay-log=relay-log --relay-log-index=relay-log.index
+      MYSQL_REPLICATION_USER: "replicator"
+      MYSQL_REPLICATION_PASSWORD: "ReplicaSync2024!"
+    command:
+      - --server-id=2
+      - --relay-log=relay-log
+      - --relay-log-index=relay-log.index
     volumes:
       - db_replica_data:/var/lib/mysql
+      - ./mysql/db-replica-init:/docker-entrypoint-initdb.d:ro
     networks:
       - db_net
     depends_on:
@@ -263,3 +277,32 @@ services:
         condition: on-failure
         delay: 10s
         max_attempts: 5
+
+  frontend:
+    image: safecampus_frontend:latest
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_KEYCLOAK_URL: "http://localhost:8000/auth" 
+      NEXT_PUBLIC_KEYCLOAK_REALM: "safecampus"
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "safecampus-frontend"
+      NEXT_PUBLIC_API_URL: "http://localhost:8000/api" 
+    volumes:
+      - ./frontend/app:/app/app:ro
+      - ./frontend/lib:/app/lib:ro
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:ro
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+    networks:
+      - gateway_net
+    depends_on:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure

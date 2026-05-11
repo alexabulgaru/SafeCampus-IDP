@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaReplicaService } from '../prisma/prisma-replica.service';
 import { KeycloakUserSyncData } from '../common/interfaces/interfaces';
 import { UpdateUserLocationDto } from './dtos/update-user-location.dto';
 import { KeycloakUser } from '../common/interfaces/interfaces';
@@ -8,7 +9,10 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly prismaReplica: PrismaReplicaService,
+    ) { }
 
     async upsertUserFromKeycloak(data: KeycloakUserSyncData): Promise<void> {
         try {
@@ -48,7 +52,7 @@ export class UserService {
     }
 
     async getUserByKeycloakId(keycloakId: string) {
-        return this.prisma.user.findUnique({
+        return this.prismaReplica.user.findUnique({
             where: { keycloakId },
         });
     }
@@ -57,7 +61,7 @@ export class UserService {
         try {
             const keycloakId = user?.sub || user?.id;
 
-            const dbUser = await this.prisma.user.findUnique({
+            const dbUser = await this.prismaReplica.user.findUnique({
                 where: { keycloakId },
             });
 
@@ -70,7 +74,7 @@ export class UserService {
                 throw new ForbiddenException('Only admins can view all users');
             }
 
-            return await this.prisma.user.findMany({
+            return await this.prismaReplica.user.findMany({
                 include: {
                     incidents: true,
                 },

@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { PrismaReplicaService } from "../prisma/prisma-replica.service";
 import { CacheService } from "../cache/cache.service";
 import { CreateIncidentDto } from "./dtos/create-incident.dto";
 import { Role, IncidentType, Incidents, User } from "@prisma/client";
@@ -12,6 +13,7 @@ import { MetricsService } from "../metrics/metrics.service"
 export class IncidentsService {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly prismaReplica: PrismaReplicaService,
         private readonly cache: CacheService,
         private readonly kafka: KafkaService,
         private readonly metricsService: MetricsService,
@@ -58,7 +60,7 @@ export class IncidentsService {
             let dbUser = await this.cache.get(userCacheKey);
 
             if (!dbUser) {
-                dbUser = await this.prisma.user.findUnique({
+                dbUser = await this.prismaReplica.user.findUnique({
                     where: { keycloakId },
                 });
 
@@ -73,12 +75,12 @@ export class IncidentsService {
             let incidents: (Incidents & { reportedBy: User | null })[] = [];
 
             if (dbUser.role === Role.STUDENT) {
-                incidents = await this.prisma.incidents.findMany({
+                incidents = await this.prismaReplica.incidents.findMany({
                     where: { reportedById: dbUser.id },
                     include: { reportedBy: true },
                 });
             } else if (dbUser.role === Role.MAINTENANCE) {
-                incidents = await this.prisma.incidents.findMany({
+                incidents = await this.prismaReplica.incidents.findMany({
                     where: {
                         OR: [
                             { reportedById: dbUser.id },
@@ -88,7 +90,7 @@ export class IncidentsService {
                     include: { reportedBy: true },
                 });
             } else if (dbUser.role === Role.OPERATOR) {
-                incidents = await this.prisma.incidents.findMany({
+                incidents = await this.prismaReplica.incidents.findMany({
                     where: {
                         OR: [
                             { reportedById: dbUser.id },
@@ -102,7 +104,7 @@ export class IncidentsService {
                     include: { reportedBy: true },
                 });
             } else if (dbUser.role === Role.ADMIN) {
-                incidents = await this.prisma.incidents.findMany({
+                incidents = await this.prismaReplica.incidents.findMany({
                     include: { reportedBy: true },
                 });
             }
@@ -128,7 +130,7 @@ export class IncidentsService {
     async updateIncidentStatus(updateStatusDto: UpdateStatusDto, user: KeycloakUser): Promise<void> {
         try {
             const keycloakId = user?.sub || user?.id;
-            const dbUser = await this.prisma.user.findUnique({
+            const dbUser = await this.prismaReplica.user.findUnique({
                 where: { keycloakId },
             });
 
@@ -155,7 +157,7 @@ export class IncidentsService {
     async deleteIncident(incidentId: string, user: KeycloakUser): Promise<void> {
         try {
             const keycloakId = user?.sub || user?.id;
-            const dbUser = await this.prisma.user.findUnique({
+            const dbUser = await this.prismaReplica.user.findUnique({
                 where: { keycloakId },
             });
 

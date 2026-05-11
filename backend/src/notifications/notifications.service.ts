@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaReplicaService } from '../prisma/prisma-replica.service';
 import { KafkaService } from '../kafka/kafka.service';
 import { Role, IncidentType, Incidents, User } from '@prisma/client';
 
@@ -7,6 +8,7 @@ import { Role, IncidentType, Incidents, User } from '@prisma/client';
 export class NotificationService implements OnModuleInit {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly prismaReplica: PrismaReplicaService,
         private readonly kafka: KafkaService,
     ) { }
 
@@ -55,7 +57,7 @@ export class NotificationService implements OnModuleInit {
             const title = `New ${incident.type} incident reported`;
             const message = `${incident.title}: ${incident.description}`;
 
-            const students: User[] = await this.prisma.user.findMany({
+            const students: User[] = await this.prismaReplica.user.findMany({
                 where: {
                     role: Role.STUDENT,
                     lat: { not: null },
@@ -73,7 +75,7 @@ export class NotificationService implements OnModuleInit {
                 return distance <= 1;
             });
 
-            const staff: User[] = await this.prisma.user.findMany({
+            const staff: User[] = await this.prismaReplica.user.findMany({
                 where: {
                     role: { in: [Role.OPERATOR, Role.MAINTENANCE, Role.ADMIN] },
                 },
