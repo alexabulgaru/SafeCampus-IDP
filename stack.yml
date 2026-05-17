@@ -285,10 +285,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - target: 3000
-        published: 3000
-        protocol: tcp
-        mode: host
+      - "3000:3000"
     networks:
       - gateway_net
     depends_on:
