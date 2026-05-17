@@ -59,6 +59,7 @@ export default function Incidents() {
         }
 
         try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.patch(
                 `${apiUrl}/incidents/update-status`,
                 {
