@@ -253,9 +253,6 @@ services:
       KEYCLOAK_CLIENT_ID: "safecampus-backend"
       KEYCLOAK_BEARER_ONLY: "true"
       KEYCLOAK_REALM_PUBLIC_KEY: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2ldRbZ4ekSKXyIRYiN0eYNvAJgJVdW4j6jKzg7XIZ+K3KDQ+oaLb0zDcAVbPHcXar1a8dvXfDBFWyLFaL39Xk2Pp13mA4etVARXu3KIxl/H4sIOII9kkA3KZRvAVFeSQnXh9H17/N2ox38TtSBSvuDwWiBgcymfnT/CLSTayBqeJRAwfjbVBrVAvuKuqRQfnCsPJOxCMxgEbj/Rvz3W/GRSCNlu5rmmPPWMJDRafe3LfZL22w7O351x6jJExLZ4hsqsaCYY5PczP1s2osdN5yJ57lFfFaL/JzFyxOHKzP2sS5+TEQtZ9QvIVXCc7ediylRlLrEih86uKhPAZfP8LKwIDAQAB"
-    volumes:
-      - ${PWD}/backend/src:/app/src:ro
-      - ${PWD}/backend/prisma:/app/prisma:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     expose:
@@ -286,11 +283,6 @@ services:
       NEXT_PUBLIC_KEYCLOAK_REALM: "safecampus"
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: "safecampus-frontend"
       NEXT_PUBLIC_API_URL: "http://localhost:8000/api" 
-    volumes:
-      - ./frontend/app:/app/app:ro
-      - ./frontend/lib:/app/lib:ro
-      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:ro
-      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
