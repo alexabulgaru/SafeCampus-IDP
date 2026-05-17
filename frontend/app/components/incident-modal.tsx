@@ -27,8 +27,9 @@ export default function IncidentModal({ isOpen, onClose }: IncidentModalProps) {
     const handleSubmit = async (values: { title: string; description: string; type: string }, { setSubmitting }: any) => {
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/incidents/create`,
+                `${apiUrl}/incidents/create`,
                 {
                     title: values.title,
                     description: values.description,

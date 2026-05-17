@@ -22,8 +22,9 @@ export default function Incidents() {
     const fetchIncidents = async () => {
         try {
             setLoading(true);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             const response = await axios.get(
-                `${process.env.NEXT_PUBLIC_API_URL}/incidents`,
+                `${apiUrl}/incidents`,
                 {
                     headers: {
                         'Authorization': `Bearer ${keycloak?.token}`,
@@ -59,7 +60,7 @@ export default function Incidents() {
 
         try {
             await axios.patch(
-                `${process.env.NEXT_PUBLIC_API_URL}/incidents/update-status`,
+                `${apiUrl}/incidents/update-status`,
                 {
                     incidentId: selectedIncident.id,
                     status: selectedIncident.status,
@@ -85,8 +86,9 @@ export default function Incidents() {
         }
 
         try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.delete(
-                `${process.env.NEXT_PUBLIC_API_URL}/incidents/delete`,
+                `${apiUrl}/incidents/delete`,
                 {
                     headers: {
                         'Authorization': `Bearer ${keycloak?.token}`,

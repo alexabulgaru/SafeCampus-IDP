@@ -25,8 +25,9 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             const response = await axios.get<Notification[]>(
-                `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
+                `${apiUrl}/notifications`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -45,8 +46,9 @@ export default function NotificationsPage() {
     const handleMarkAsRead = async (notificationId: string) => {
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}/read`,
+                `${apiUrl}/notifications/${notificationId}/read`,
                 {},
                 {
                     headers: {
@@ -68,8 +70,9 @@ export default function NotificationsPage() {
     const handleDelete = async (notificationId: string) => {
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/notifications/${notificationId}/delete`,
+                `${apiUrl}/notifications/${notificationId}/delete`,
                 {},
                 {
                     headers: {
@@ -88,8 +91,9 @@ export default function NotificationsPage() {
     const handleMarkAllAsRead = async () => {
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/notifications/mark-all-read`,
+                `${apiUrl}/notifications/mark-all-read`,
                 {},
                 {
                     headers: {

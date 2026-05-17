@@ -18,7 +18,8 @@ export default function Users() {
         try {
             setLoading(true);
             const token = keycloak?.token;
-            const response = await axios.get<User[]>(`${process.env.NEXT_PUBLIC_API_URL}/user/all`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+            const response = await axios.get<User[]>(`${apiUrl}/user/all`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -43,8 +44,9 @@ export default function Users() {
 
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.patch(
-                `${process.env.NEXT_PUBLIC_API_URL}/user/update-role/${selectedUser.id}`,
+                `${apiUrl}/user/update-role/${selectedUser.id}`,
                 { newRole: selectedUser.role },
                 {
                     headers: {
@@ -72,8 +74,9 @@ export default function Users() {
 
         try {
             const token = keycloak?.token;
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await axios.delete(
-                `${process.env.NEXT_PUBLIC_API_URL}/user/delete/${userToDelete.id}`,
+                `${apiUrl}/user/delete/${userToDelete.id}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,

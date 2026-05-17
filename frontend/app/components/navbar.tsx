@@ -24,8 +24,9 @@ export default function Navbar() {
 		const fetchUnreadCount = async () => {
 			try {
 				const token = keycloak?.token;
+				const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 				const response = await axios.get(
-					`${process.env.NEXT_PUBLIC_API_URL}/notifications/unread`,
+					`${apiUrl}/notifications/unread`,
 					{
 						headers: {
 							'Authorization': `Bearer ${token}`,
