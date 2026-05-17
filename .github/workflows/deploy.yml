@@ -69,8 +69,5 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             cd ~/safecampus
-            # Login to GitHub Registry on the server to pull the fresh images
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Deploy the updated stack
-            docker stack deploy -c stack.yml safecampus
+            docker stack deploy --with-registry-auth -c stack.yml safecampus
