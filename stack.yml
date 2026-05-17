@@ -239,7 +239,7 @@ services:
         condition: on-failure
 
   backend:
-    image: safecampus_backend:latest
+    image: ghcr.io/alexabulgaru/safecampus-idp/safecampus_backend:latest
     environment:
       PORT: "3001"
       DATABASE_URL: "mysql://root:Password2024!@db:3306/safecampus"
@@ -276,7 +276,7 @@ services:
         max_attempts: 5
 
   frontend:
-    image: safecampus_frontend:latest
+    image: ghcr.io/alexabulgaru/safecampus-idp/safecampus_frontend:latest
     command: npm run dev
     environment:
       NEXT_PUBLIC_KEYCLOAK_URL: "http://localhost:8000/auth" 
