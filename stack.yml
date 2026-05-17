@@ -277,7 +277,6 @@ services:
 
   frontend:
     image: ghcr.io/alexabulgaru/safecampus-idp/safecampus_frontend:latest
-    command: npm run dev
     environment:
       NEXT_PUBLIC_KEYCLOAK_URL: "http://localhost:8000/auth" 
       NEXT_PUBLIC_KEYCLOAK_REALM: "safecampus"
