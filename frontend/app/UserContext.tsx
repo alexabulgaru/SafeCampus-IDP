@@ -52,7 +52,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                     return;
                 }
 
-                const response = await axios.get<User>(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                const response = await axios.get<User>(`${apiUrl}/auth/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -81,8 +82,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                                 await keycloak.updateToken(30);
                                 const token = keycloak.token;
                                 
+                                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
                                 await axios.post(
-                                    `${process.env.NEXT_PUBLIC_API_URL}/user/update-location`,
+                                    `${apiUrl}/user/update-location`,
                                     {
                                         userId: userData.id,
                                         lat: latitude,
